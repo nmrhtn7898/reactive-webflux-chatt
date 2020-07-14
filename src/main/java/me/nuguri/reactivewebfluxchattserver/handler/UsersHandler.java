@@ -8,9 +8,6 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.util.Arrays;
-
 import static java.net.URI.create;
 
 @Component
@@ -21,7 +18,7 @@ public class UsersHandler {
 
     public Mono<ServerResponse> createUser(ServerRequest serverRequest) {
         return ServerResponse
-                .created(create("/api/v1/use"))
+                .created(create("/api/v1/user"))
                 .body(
                         serverRequest
                                 .bodyToMono(Users.class)
