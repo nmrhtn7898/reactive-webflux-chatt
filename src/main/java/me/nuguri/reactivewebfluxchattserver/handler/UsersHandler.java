@@ -3,12 +3,15 @@ package me.nuguri.reactivewebfluxchattserver.handler;
 import lombok.RequiredArgsConstructor;
 import me.nuguri.reactivewebfluxchattserver.entity.Users;
 import me.nuguri.reactivewebfluxchattserver.service.UsersService;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.net.URI;
+import java.util.Arrays;
+
+import static java.net.URI.create;
 
 @Component
 @RequiredArgsConstructor
@@ -17,11 +20,14 @@ public class UsersHandler {
     private final UsersService usersService;
 
     public Mono<ServerResponse> createUser(ServerRequest serverRequest) {
-        Users users = Users.builder().name("bom").build();
         return ServerResponse
-                .ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(usersService.save(users), Users.class);
+                .created(create("/api/v1/use"))
+                .body(
+                        serverRequest
+                                .bodyToMono(Users.class)
+                                .flatMap(usersService::save),
+                        Users.class
+                );
     }
 
 }
