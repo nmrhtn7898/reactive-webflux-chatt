@@ -1,0 +1,4 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://bom:1234@cluster0.9pfdj.mongodb.net/chatt?retryWrites=true&w=majority
