@@ -18,10 +18,10 @@ public class ReactiveServerRouterConfig {
 
     @Bean
     public RouterFunction<ServerResponse> createUser(UsersHandler handler) {
-        return RouterFunctions.route(
-                POST("/api/v1/user").and(accept(APPLICATION_JSON)),
-                handler::createUser
-        );
+        return RouterFunctions
+                .route(GET("/api/v1/users").and(accept(APPLICATION_JSON)), handler::findUsers)
+                .andRoute(GET("/api/v1/user/{id}"), handler::findUser)
+                .andRoute(POST("/api/v1/user").and(accept(APPLICATION_JSON)), handler::createUser);
     }
 
 }
