@@ -10,18 +10,28 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.util.Arrays.asList;
 
 public class MonoAndFluxTest {
 
+    // references
+    // https://tech.kakao.com/2018/05/29/reactor-programming/
+
+    // Publisher 스트림 element 변경시 flatMap, flatMapSequential, concatMap 연산 사용 가능
+    // flatMap => 비동기 O, 순서 보장 X
+    // concatMap => 비동기 X, 순서 보장 O
+    // flatMapSequential 비동기 O, 순서 보장 O
     @Test
     void test() {
-        final List<String> basket1 = Arrays.asList(new String[]{"kiwi", "orange", "lemon", "orange", "lemon", "kiwi"});
-        final List<String> basket2 = Arrays.asList(new String[]{"banana", "lemon", "lemon", "kiwi"});
-        final List<String> basket3 = Arrays.asList(new String[]{"strawberry", "orange", "lemon", "grape", "strawberry"});
-        final List<List<String>> baskets = Arrays.asList(basket1, basket2, basket3);
+        final List<String> basket1 = asList("kiwi", "orange", "lemon", "orange", "lemon", "kiwi");
+        final List<String> basket2 = asList("banana", "lemon", "lemon", "kiwi");
+        final List<String> basket3 = asList("strawberry", "orange", "lemon", "grape", "strawberry");
+        final List<List<String>> baskets = asList(basket1, basket2, basket3);
         final Flux<List<String>> basketFlux = Flux.fromIterable(baskets);
 
-        basketFlux.concatMap(baskect -> { // List<String>
+        basketFlux.flatMapSequential(baskect -> { // List<String>
             Mono<List<String>> distinctFruits = Flux
                     .fromIterable(baskect) // Flux<String>, Iterable 구현체 컬렉션을 Flux<T> 변환
                     .distinct() // Flux<String>, 중복 element 제거
@@ -31,7 +41,7 @@ public class MonoAndFluxTest {
             Mono<Map<String, Long>> countFruits = Flux
                     .fromIterable(baskect) // Flux<String>, Iterable 구현체 컬렉션을 Flux<T> 변환
                     .groupBy(fruit -> fruit) // Flux<GroupedFlux<String, String>>, element 그룹핑
-                    .concatMap(groupedFlux -> groupedFlux // GroupedFlux<String, String>
+                    .flatMapSequential(groupedFlux -> groupedFlux // GroupedFlux<String, String>
                             .count() // Mono<Long>, 그룹핑 Flux element 갯수 집계
                             .map(count -> {
                                 final Map<String, Long> fruitCount = new LinkedHashMap<>();
@@ -53,7 +63,7 @@ public class MonoAndFluxTest {
 
             // Flux<FruitInfo>, 두 개의 스트림을 하나의 스트림으로 변환하고 element를 지정한 객체 타입으로 변경 가능
             return Flux.zip(distinctFruits, countFruits, (distinct, count) -> new FruitInfo(distinct, count));
-        }) // Flux<FruitInfo>, Flux<List<String>> => Flux<FruitInfo> concatMap 결과
+        }) // Flux<FruitInfo>, Flux<List<String>> => Flux<FruitInfo> flatMapSequential 결과
         .subscribe(System.out::println); // 스트림의 각 element FruitInfo 출력, 구독 및 발행 시작
     }
 
