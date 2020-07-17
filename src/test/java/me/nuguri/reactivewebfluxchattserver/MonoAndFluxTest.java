@@ -1,6 +1,5 @@
 package me.nuguri.reactivewebfluxchattserver;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.junit.jupiter.api.Test;
@@ -22,9 +21,11 @@ public class MonoAndFluxTest {
     // https://tech.kakao.com/2018/05/29/reactor-programming/
 
     // Publisher 스트림 element 변경시 flatMap, flatMapSequential, concatMap 연산 사용 가능
-    // flatMap => 비동기 O, 순서 보장 X
-    // concatMap => 비동기 X, 순서 보장 O
-    // flatMapSequential 비동기 O, 순서 보장 O
+    // flatMap => 비동기로 동작 할 때 순서 보장 X
+    // concatMap => 비동기로 동작 할 때 순서 보장 O, 인자로 전달한 함수(인터페이스 구현체)에서
+    // 리턴하는 Publisher의 스트림 처리가 모두 종료 된 후 그 다음 Publisher 처리 가능(동시성 지원 X)
+    // flatMapSequential =>비동기로 동작 할 때 순서 보장 O, 리턴하는 Publisher의 스트림 처리의 종료를
+    // 기다리지 않고 계속해서 스트림 처리를 진행하고 결과는 순서에 맞게 리턴(동시성 지원 O)
 
     /**
      * distinctFruits 중복 제거 리스트와 각 과일의 개수를 묶은 리스트를 하나의 리스트로 묶어서 각각 출력
@@ -77,7 +78,7 @@ public class MonoAndFluxTest {
             // Flux<FruitInfo>, 두 개의 스트림을 하나의 스트림으로 변환하고 element를 지정한 객체 타입으로 변경 가능
             return Flux.zip(distinctFruits, countFruits, (distinct, count) -> new FruitInfo(distinct, count));
         }) // Flux<FruitInfo>, Flux<List<String>> => Flux<FruitInfo> flatMapSequential 결과
-        .subscribe(System.out::println); // 스트림의 각 element FruitInfo 출력, 구독 및 발행 시작
+                .subscribe(System.out::println); // 스트림의 각 element FruitInfo 출력, 구독 및 발행 시작
     }
 
     // subscribeOn 해당 스트림을 구독할 때 동작하는 스케줄러를 지정
@@ -138,17 +139,17 @@ public class MonoAndFluxTest {
             // Flux<FruitInfo>, 두 개의 스트림을 하나의 스트림으로 변환하고 element를 지정한 객체 타입으로 변경 가능
             return Flux.zip(distinctFruits, countFruits, (distinct, count) -> new FruitInfo(distinct, count));
         }) // Flux<FruitInfo>, Flux<List<String>> => Flux<FruitInfo> flatMapSequential 결과
-        .subscribe(
-                System.out::println, // consumer, 스트림의 값이 넘어올 때 호출, onNext(T)
-                error -> { // errorConsumer, 스트림 처리 중 에러 발생 시 호출, countDown, onError(Throwable)
-                    System.err.println(error);
-                    countDownLatch.countDown(); // 병렬 쓰레드 종료 알림, main 쓰레드 대기 해제
-                },
-                () -> { // 스트림 정상 수행 후 종료시, countDown, onComplete()
-                    System.out.println("complete");
-                    countDownLatch.countDown(); // 병렬 쓰레드 종료 알림, main 쓰레드 대기 해제
-                }
-        ); // 스트림의 각 element FruitInfo 출력, 구독 및 발행 시작
+                .subscribe(
+                        System.out::println, // consumer, 스트림의 값이 넘어올 때 호출, onNext(T)
+                        error -> { // errorConsumer, 스트림 처리 중 에러 발생 시 호출, countDown, onError(Throwable)
+                            System.err.println(error);
+                            countDownLatch.countDown(); // 병렬 쓰레드 종료 알림, main 쓰레드 대기 해제
+                        },
+                        () -> { // 스트림 정상 수행 후 종료시, countDown, onComplete()
+                            System.out.println("complete");
+                            countDownLatch.countDown(); // 병렬 쓰레드 종료 알림, main 쓰레드 대기 해제
+                        }
+                ); // 스트림의 각 element FruitInfo 출력, 구독 및 발행 시작
         countDownLatch.await(2, TimeUnit.SECONDS); // main 쓰레드가 데몬 쓰레드의 동작 종료를 기다려주는 타임아웃 세컨드 설정
     }
 
